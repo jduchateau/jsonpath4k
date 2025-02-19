@@ -2,6 +2,7 @@ import com.strumenta.antlrkotlin.gradle.AntlrKotlinTask
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.jetbrains.dokka.gradle.DokkaTask
 import org.jetbrains.dokka.gradle.DokkaTaskPartial
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.dsl.kotlinExtension
 import org.jetbrains.kotlin.gradle.plugin.mpp.BitcodeEmbeddingMode
@@ -9,6 +10,7 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFrameworkConfig
 
 plugins {
+    alias(libs.plugins.android.library)
     alias(libs.plugins.jetbrains.kotlin.multiplatform)
     alias(libs.plugins.jetbrains.kotlinx.serialization)
     alias(libs.plugins.kotest.multiplatform)
@@ -25,6 +27,7 @@ version = artifactVersion
 
 
 repositories {
+    google()
     maven("https://s01.oss.sonatype.org/content/repositories/snapshots") //KOTEST snapshot
     mavenCentral()
 }
@@ -70,12 +73,31 @@ val generateKotlinGrammarSource = tasks.register<AntlrKotlinTask>("generateKotli
 
 
 kotlin {
-    jvm()
+    jvmToolchain(17)
+
+    jvm {
+        compilations.all {
+            kotlinOptions {
+                jvmTarget = "17"
+                freeCompilerArgs = listOf(
+                    "-Xjsr305=strict"
+                )
+            }
+        }
+    }
+
+    androidTarget {
+        compilerOptions {
+            publishLibraryVariants("release")
+            jvmTarget = JvmTarget.JVM_1_8
+        }
+    }
+
+
     iosArm64()
     iosSimulatorArm64()
     iosX64()
 
-    jvmToolchain(17)
 
     sourceSets {
         commonMain{
@@ -111,6 +133,19 @@ val javadocJar = setupDokka(
     baseUrl = "https://github.com/a-sit-plus/jsonpath4k/tree/main/",
     multiModuleDoc = false
 )
+
+
+android {
+    namespace = "at.asitplus.jsonpath4k"
+    compileSdk = 34
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+    defaultConfig {
+        minSdk = 30
+    }
+}
 
 publishing {
     publications {

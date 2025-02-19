@@ -1,5 +1,9 @@
 # Release NEXT
 
+# Release 2.4.1
+* Introduce dedicated Android artefact targeting JDK 1.8
+* Kotlin 2.1.0
+
 # Release 2.4.0
 * ANTLR 1.0.0 Stable
 * Kotest Snapshot to get iOS tests working again
