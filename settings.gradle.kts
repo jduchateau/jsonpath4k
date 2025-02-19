@@ -10,4 +10,12 @@ pluginManagement {
     }
 }
 
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        mavenLocal()
+    }
+}
+
 include(":jsonpath4k")

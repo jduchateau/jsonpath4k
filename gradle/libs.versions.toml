@@ -2,11 +2,12 @@
 antlr-kotlin = "1.0.0"
 kotest = "5.9.1"
 kotest-plugin = "6.0.0.M1"
-jetbrains-kotlin = "2.0.20"
-jetbrains-kotlinx-serialization = "1.7.2"
+jetbrains-kotlin = "2.1.0"
+jetbrains-kotlinx-serialization = "1.8.0"
 jetbrains-dokka = "1.9.20"
 napier = "2.7.1"
 gradle-nexus-publish = "2.0.0"
+agp = "8.2.2"
 
 [libraries]
 antlr-kotlin = { group = "com.strumenta", name = "antlr-kotlin-runtime", version.ref = "antlr-kotlin" }
@@ -29,3 +30,4 @@ jetbrains-kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", ve
 jetbrains-kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "jetbrains-kotlin" }
 jetbrains-dokka = { id = "org.jetbrains.dokka", version.ref = "jetbrains-dokka" }
 gradle-nexus-publish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "gradle-nexus-publish" }
+android-library = {id = "com.android.library", version.ref = "agp"}
