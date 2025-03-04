@@ -1,5 +1,7 @@
 # Release NEXT
 
+# Next
+
 # Release 2.4.1
 * Introduce dedicated Android artefact targeting JDK 1.8
 * Kotlin 2.1.0
