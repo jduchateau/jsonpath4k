@@ -809,7 +809,9 @@ class JsonPathUnitTest : FreeSpec({
                     }
                 }
 
-                JsonPath(this.testScope.testCase.name.originalName)
+                shouldNotThrowAny {
+                    JsonPath(this.testScope.testCase.name.originalName)
+                }
             }
             "\$[?match(@.timezone, 'Europe/.*') == true]" {
                 shouldThrow<JsonPathTypeCheckerException> {
@@ -817,7 +819,9 @@ class JsonPathUnitTest : FreeSpec({
                 }
             }
             "\$[?value(@..color) == 'red']" {
-                JsonPath(this.testScope.testCase.name.originalName)
+                shouldNotThrowAny {
+                    JsonPath(this.testScope.testCase.name.originalName)
+                }
             }
             "\$[?value(@..color)]" {
                 shouldThrow<JsonPathTypeCheckerException> {
@@ -834,7 +838,9 @@ class JsonPathUnitTest : FreeSpec({
                         }
                     }
 
-                    JsonPath(this.testScope.testCase.parent!!.name.originalName)
+                    shouldNotThrowAny {
+                        JsonPath(this.testScope.testCase.parent!!.name.originalName)
+                    }
                 }
                 "value type argument" {
                     JsonPath.defaultFunctionExtensionRepository.addExtension("bar") {
@@ -845,7 +851,9 @@ class JsonPathUnitTest : FreeSpec({
                         }
                     }
 
-                    JsonPath(this.testScope.testCase.parent!!.name.originalName)
+                    shouldNotThrowAny {
+                        JsonPath(this.testScope.testCase.parent!!.name.originalName)
+                    }
                 }
                 "nodes type argument" {
                     JsonPath.defaultFunctionExtensionRepository.addExtension("bar") {
@@ -856,7 +864,9 @@ class JsonPathUnitTest : FreeSpec({
                         }
                     }
 
-                    JsonPath(this.testScope.testCase.parent!!.name.originalName)
+                    shouldNotThrowAny {
+                        JsonPath(this.testScope.testCase.parent!!.name.originalName)
+                    }
                 }
             }
             "\$[?bnl(@.*)]" - {
@@ -869,7 +879,9 @@ class JsonPathUnitTest : FreeSpec({
                         }
                     }
 
-                    JsonPath(this.testScope.testCase.parent!!.name.originalName)
+                    shouldNotThrowAny {
+                        JsonPath(this.testScope.testCase.parent!!.name.originalName)
+                    }
                 }
                 "value type argument" {
                     JsonPath.defaultFunctionExtensionRepository.addExtension("bnl") {
@@ -880,7 +892,9 @@ class JsonPathUnitTest : FreeSpec({
                         }
                     }
 
-                    JsonPath(this.testScope.testCase.parent!!.name.originalName)
+                    shouldThrow<JsonPathTypeCheckerException> {
+                        JsonPath(this.testScope.testCase.parent!!.name.originalName)
+                    }
                 }
                 "nodes type argument" {
                     JsonPath.defaultFunctionExtensionRepository.addExtension("bnl") {
