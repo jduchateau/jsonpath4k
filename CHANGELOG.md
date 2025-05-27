@@ -3,6 +3,7 @@
 # Release 3.0.0
  * BREAKING CHANGES:
    * Removed template type from `JsonPathFunctionExtension`
+   * `JsonPathQuery` is no longer an interface
  * DEPRECATIONS
    * Moved dependency management from `JsonPathDependencyManager` to `JsonPath.Companion`
    * Renamed `JsonPathFunctionExtension.evaluate` to `JsonPathFunctionExtension.invoke`
