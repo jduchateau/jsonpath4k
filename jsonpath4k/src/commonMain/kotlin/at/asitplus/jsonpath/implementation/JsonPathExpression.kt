@@ -54,7 +54,15 @@ internal sealed interface JsonPathExpression {
                     )
                 }
 
-                data class SingularQueryExpression(
+                companion object {
+                    operator fun invoke(jsonPathQuery: JsonPathQuery) = if(jsonPathQuery.isSingularQuery) {
+                        SingularQueryExpression(jsonPathQuery)
+                    } else {
+                        NonSingularQueryExpression(jsonPathQuery)
+                    }
+                }
+
+                class SingularQueryExpression internal constructor(
                     override val jsonPathQuery: JsonPathQuery,
                 ) : FilterQueryExpression {
                     fun toValueTypeValue(): ValueExpression {
@@ -72,7 +80,7 @@ internal sealed interface JsonPathExpression {
                     }
                 }
 
-                data class NonSingularQueryExpression(
+                class NonSingularQueryExpression internal constructor(
                     override val jsonPathQuery: JsonPathQuery,
                 ) : FilterQueryExpression {
                     override fun invoke(context: JsonPathExpressionEvaluationContext): JsonPathFilterExpressionValue.NodesTypeValue.FilterQueryResult.NonSingularQueryResult {

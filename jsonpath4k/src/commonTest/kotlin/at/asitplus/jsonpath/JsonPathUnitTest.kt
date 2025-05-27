@@ -761,20 +761,20 @@ class JsonPathUnitTest : FreeSpec({
 
         "2.4. Function Extensions" - {
             // making sure that the dependencies are reset to their default for the next test
-            val defaultCompilerBuilderBackup = JsonPathDependencyManager.compiler
+            val defaultCompilerBuilderBackup = JsonPath.defaultCompiler
             val defaultFunctionExtensionRepositoryBackup =
-                JsonPathDependencyManager.functionExtensionRepository.export()
+                JsonPath.defaultFunctionExtensionRepository.export()
             beforeEach {
                 // prepare a dummy repository to be modified by the tests
-                JsonPathDependencyManager.functionExtensionRepository =
+                JsonPath.defaultFunctionExtensionRepository =
                     JsonPathFunctionExtensionMapRepository(
                         defaultFunctionExtensionRepositoryBackup.toMutableMap()
                     )
             }
             afterEach {
-                JsonPathDependencyManager.apply {
-                    compiler = defaultCompilerBuilderBackup
-                    functionExtensionRepository =
+                JsonPath.Companion.apply {
+                    defaultCompiler = defaultCompilerBuilderBackup
+                    defaultFunctionExtensionRepository =
                         JsonPathFunctionExtensionMapRepository(
                             defaultFunctionExtensionRepositoryBackup.toMutableMap()
                         )
@@ -801,7 +801,7 @@ class JsonPathUnitTest : FreeSpec({
                 }
             }
             "\$[?count(foo(@.*)) == 1]" {
-                JsonPathDependencyManager.functionExtensionRepository.addExtension("foo") {
+                JsonPath.defaultFunctionExtensionRepository.addExtension("foo") {
                     JsonPathFunctionExtension.NodesTypeFunctionExtension(
                         JsonPathFilterExpressionType.NodesType,
                     ) {
@@ -830,7 +830,7 @@ class JsonPathUnitTest : FreeSpec({
             }
             "\$[?bar(@.a)]" - {
                 "logical type argument" {
-                    JsonPathDependencyManager.functionExtensionRepository.addExtension("bar") {
+                    JsonPath.defaultFunctionExtensionRepository.addExtension("bar") {
                         JsonPathFunctionExtension.LogicalTypeFunctionExtension(
                             JsonPathFilterExpressionType.LogicalType,
                         ) {
@@ -843,7 +843,7 @@ class JsonPathUnitTest : FreeSpec({
                     }
                 }
                 "value type argument" {
-                    JsonPathDependencyManager.functionExtensionRepository.addExtension("bar") {
+                    JsonPath.defaultFunctionExtensionRepository.addExtension("bar") {
                         JsonPathFunctionExtension.LogicalTypeFunctionExtension(
                             JsonPathFilterExpressionType.ValueType,
                         ) {
@@ -856,7 +856,7 @@ class JsonPathUnitTest : FreeSpec({
                     }
                 }
                 "nodes type argument" {
-                    JsonPathDependencyManager.functionExtensionRepository.addExtension("bar") {
+                    JsonPath.defaultFunctionExtensionRepository.addExtension("bar") {
                         JsonPathFunctionExtension.LogicalTypeFunctionExtension(
                             JsonPathFilterExpressionType.NodesType,
                         ) {
@@ -871,7 +871,7 @@ class JsonPathUnitTest : FreeSpec({
             }
             "\$[?bnl(@.*)]" - {
                 "logical type argument" {
-                    JsonPathDependencyManager.functionExtensionRepository.addExtension("bnl") {
+                    JsonPath.defaultFunctionExtensionRepository.addExtension("bnl") {
                         JsonPathFunctionExtension.LogicalTypeFunctionExtension(
                             JsonPathFilterExpressionType.LogicalType,
                         ) {
@@ -884,7 +884,7 @@ class JsonPathUnitTest : FreeSpec({
                     }
                 }
                 "value type argument" {
-                    JsonPathDependencyManager.functionExtensionRepository.addExtension("bnl") {
+                    JsonPath.defaultFunctionExtensionRepository.addExtension("bnl") {
                         JsonPathFunctionExtension.LogicalTypeFunctionExtension(
                             JsonPathFilterExpressionType.ValueType,
                         ) {
@@ -897,7 +897,7 @@ class JsonPathUnitTest : FreeSpec({
                     }
                 }
                 "nodes type argument" {
-                    JsonPathDependencyManager.functionExtensionRepository.addExtension("bnl") {
+                    JsonPath.defaultFunctionExtensionRepository.addExtension("bnl") {
                         JsonPathFunctionExtension.LogicalTypeFunctionExtension(
                             JsonPathFilterExpressionType.NodesType
                         ) {
@@ -911,7 +911,7 @@ class JsonPathUnitTest : FreeSpec({
                 }
             }
             "\$[?blt(1==1)]" {
-                JsonPathDependencyManager.functionExtensionRepository.addExtension("blt") {
+                JsonPath.defaultFunctionExtensionRepository.addExtension("blt") {
                     JsonPathFunctionExtension.LogicalTypeFunctionExtension(
                         JsonPathFilterExpressionType.LogicalType,
                     ) {
@@ -924,7 +924,7 @@ class JsonPathUnitTest : FreeSpec({
                 }
             }
             "\$[?blt(1)]" {
-                JsonPathDependencyManager.functionExtensionRepository.addExtension("blt") {
+                JsonPath.defaultFunctionExtensionRepository.addExtension("blt") {
                     JsonPathFunctionExtension.LogicalTypeFunctionExtension(
                         JsonPathFilterExpressionType.LogicalType,
                     ) {
@@ -937,7 +937,7 @@ class JsonPathUnitTest : FreeSpec({
                 }
             }
             "\$[?bal(1)]" {
-                JsonPathDependencyManager.functionExtensionRepository.addExtension("bal") {
+                JsonPath.defaultFunctionExtensionRepository.addExtension("bal") {
                     JsonPathFunctionExtension.LogicalTypeFunctionExtension(
                         JsonPathFilterExpressionType.ValueType,
                     ) {

@@ -11,11 +11,14 @@ import at.asitplus.jsonpath.core.functionExtensions.searchFunctionExtension
 import at.asitplus.jsonpath.core.functionExtensions.valueFunctionExtension
 import at.asitplus.jsonpath.implementation.AntlrJsonPathCompiler
 import at.asitplus.jsonpath.implementation.AntlrJsonPathCompilerErrorListener
+import com.strumenta.antlrkotlin.runtime.BitSet
 import io.github.aakira.napier.Napier
 import kotlinx.serialization.json.JsonElement
-import org.antlr.v4.kotlinruntime.BaseErrorListener
+import org.antlr.v4.kotlinruntime.Parser
 import org.antlr.v4.kotlinruntime.RecognitionException
 import org.antlr.v4.kotlinruntime.Recognizer
+import org.antlr.v4.kotlinruntime.atn.ATNConfigSet
+import org.antlr.v4.kotlinruntime.dfa.DFA
 
 class JsonPath(
     jsonPathExpression: String,
@@ -54,9 +57,8 @@ class JsonPath(
     }
 }
 
-
 private val napierAntlrJsonPathCompilerErrorListener by lazy {
-    object : AntlrJsonPathCompilerErrorListener, BaseErrorListener() {
+    object : AntlrJsonPathCompilerErrorListener {
         override fun unknownFunctionExtension(functionExtensionName: String) {
             Napier.e {
                 "Unknown JSONPath function extension: \"$functionExtensionName\""
@@ -95,6 +97,40 @@ private val napierAntlrJsonPathCompilerErrorListener by lazy {
             Napier.e {
                 "Invalid test expression: $testContextString"
             }
+        }
+
+        override fun reportAmbiguity(
+            recognizer: Parser,
+            dfa: DFA,
+            startIndex: Int,
+            stopIndex: Int,
+            exact: Boolean,
+            ambigAlts: BitSet,
+            configs: ATNConfigSet
+        ) {
+            // noop
+        }
+
+        override fun reportAttemptingFullContext(
+            recognizer: Parser,
+            dfa: DFA,
+            startIndex: Int,
+            stopIndex: Int,
+            conflictingAlts: BitSet,
+            configs: ATNConfigSet
+        ) {
+            // noop
+        }
+
+        override fun reportContextSensitivity(
+            recognizer: Parser,
+            dfa: DFA,
+            startIndex: Int,
+            stopIndex: Int,
+            prediction: Int,
+            configs: ATNConfigSet
+        ) {
+            // noop
         }
 
         override fun syntaxError(

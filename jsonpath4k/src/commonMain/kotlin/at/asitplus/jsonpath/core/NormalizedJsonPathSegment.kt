@@ -1,7 +1,6 @@
 package at.asitplus.jsonpath.core
 
 import kotlinx.serialization.Serializable
-import kotlin.jvm.JvmInline
 
 /**
  * specification: https://datatracker.ietf.org/doc/rfc9535/
@@ -16,7 +15,6 @@ sealed interface NormalizedJsonPathSegment {
             return "[${Rfc9535Utils.escapeToSingleQuotedStringLiteral(memberName)}]"
         }
     }
-
     @Serializable
     class IndexSegment(val index: UInt) : NormalizedJsonPathSegment {
         override fun toString(): String {

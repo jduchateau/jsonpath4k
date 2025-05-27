@@ -240,16 +240,16 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
         val children = ctx.logical_and_expr().map {
             visitLogical_and_expr(it)
         }
-        val logicalChildrenValues = children.map { it.value }
+        val logicalChildExpressions = children.map { it.value }
             .filterIsInstance<JsonPathExpression.FilterExpression.LogicalExpression>()
 
         return AbstractSyntaxTree(
             context = ctx,
-            value = if (logicalChildrenValues.size == children.size) {
+            value = if (logicalChildExpressions.size == children.size) {
                 JsonPathExpression.FilterExpression.LogicalExpression { context ->
                     JsonPathFilterExpressionValue.LogicalTypeValue(
-                        logicalChildrenValues.any {
-                            it.invoke(context).isTrue
+                        logicalChildExpressions.any {
+                            it(context).isTrue
                         }
                     )
                 }
@@ -455,8 +455,7 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
                 it
             }
 
-        val isValidFunctionCall =
-            isArglistSizeConsistent and isCoercedArgumentTypesMatching
+        val isValidFunctionCall = isArglistSizeConsistent and isCoercedArgumentTypesMatching
 
         if (isValidFunctionCall == false) {
             errorListener?.invalidArglistForFunctionExtension(
@@ -479,7 +478,7 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
                 when (extension) {
                     is JsonPathFunctionExtension.LogicalTypeFunctionExtension -> {
                         JsonPathExpression.FilterExpression.LogicalExpression { context ->
-                            extension(filterArguments.map { filterExpression ->
+                            extension.invoke(filterArguments.map { filterExpression ->
                                 filterExpression(context)
                             })
                         }
@@ -830,7 +829,6 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
     }
 }
 
-
 internal class QueryNodeBuilder(
     private val context: ParserRuleContext,
     private val contextSelectorNode: AbstractSyntaxTree<out JsonPathExpression>,
@@ -848,15 +846,9 @@ internal class QueryNodeBuilder(
             JsonPathExpression.ErrorType
         } else {
             val query = JsonPathQuery(childrenSelectors.map { it.selector })
-            if (query.isSingularQuery) {
-                JsonPathExpression.FilterExpression.NodesExpression.FilterQueryExpression.SingularQueryExpression(
-                    query
-                )
-            } else {
-                JsonPathExpression.FilterExpression.NodesExpression.FilterQueryExpression.NonSingularQueryExpression(
-                    query
-                )
-            }
+            JsonPathExpression.FilterExpression.NodesExpression.FilterQueryExpression(
+                query
+            )
         }
 
         return AbstractSyntaxTree(

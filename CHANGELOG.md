@@ -1,6 +1,13 @@
 # Release NEXT
 
-# Next
+# Release 3.0.0
+ * BREAKING CHANGES:
+   * Removed template type from `JsonPathFunctionExtension`
+   * Moved dependency management from `JsonPathDependencyManager` to `JsonPath.Companion`
+   * Renamed `JsonPathFunctionExtension.evaluate` to `JsonPathFunctionExtension.invoke`
+ * Change: `JsonPathQuery` now exposes the compiled selectors
+ * Add: `JsonPathQuery.isSingularQuery`
+ * Add: `NormalizedJsonPath.plus` for simplified api
 
 # Release 2.4.1
 * Introduce dedicated Android artefact targeting JDK 1.8
