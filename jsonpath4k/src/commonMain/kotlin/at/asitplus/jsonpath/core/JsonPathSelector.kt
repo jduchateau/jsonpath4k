@@ -324,8 +324,8 @@ sealed interface JsonPathSelector {
     }
 }
 
-interface FilterPredicate {
-    fun invoke(
+fun interface FilterPredicate {
+    operator fun invoke(
         currentNode: JsonElement,
         rootNode: JsonElement,
     ): Boolean

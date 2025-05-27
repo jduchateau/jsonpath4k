@@ -17,7 +17,7 @@ interface AntlrJsonPathSemanticAnalyzerErrorListener {
 
     fun invalidArglistForFunctionExtension(
         functionExtensionName: String,
-        functionExtensionImplementation: JsonPathFunctionExtension<*>,
+        functionExtensionImplementation: JsonPathFunctionExtension,
         coercedArgumentTypes: List<Pair<JsonPathFilterExpressionType?, String>>
     )
 

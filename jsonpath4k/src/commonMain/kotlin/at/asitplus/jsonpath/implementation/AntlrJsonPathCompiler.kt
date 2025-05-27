@@ -14,7 +14,7 @@ class AntlrJsonPathCompiler(
 ) : JsonPathCompiler {
     override fun compile(
         jsonPath: String,
-        functionExtensionRetriever: (String) -> JsonPathFunctionExtension<*>?,
+        functionExtensionRetriever: (String) -> JsonPathFunctionExtension?,
     ): JsonPathQuery {
         val lexerErrorDetector = AntlrSyntaxErrorDetector()
         val tokens = JsonPathLexer(CharStreams.fromString(jsonPath)).apply {

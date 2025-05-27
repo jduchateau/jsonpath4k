@@ -7,18 +7,18 @@ import kotlinx.serialization.json.JsonElement
  * date: 2024-02
  * section: 2.4.  Function Extensions
  */
-sealed class JsonPathFunctionExtension<ReturnType : JsonPathFilterExpressionValue>(
+sealed class JsonPathFunctionExtension(
     vararg val argumentTypes: JsonPathFilterExpressionType,
 ) {
-    abstract fun evaluate(arguments: List<JsonPathFilterExpressionValue>): ReturnType
+    abstract operator fun invoke(arguments: List<JsonPathFilterExpressionValue>): JsonPathFilterExpressionValue
 
     class ValueTypeFunctionExtension(
         vararg argumentTypes: JsonPathFilterExpressionType,
         private val evaluator: (arguments: List<JsonPathFilterExpressionValue>) -> JsonElement?
-    ) : JsonPathFunctionExtension<JsonPathFilterExpressionValue.ValueTypeValue>(
+    ) : JsonPathFunctionExtension(
         argumentTypes = argumentTypes,
     ) {
-        override fun evaluate(arguments: List<JsonPathFilterExpressionValue>): JsonPathFilterExpressionValue.ValueTypeValue {
+        override fun invoke(arguments: List<JsonPathFilterExpressionValue>): JsonPathFilterExpressionValue.ValueTypeValue {
             return evaluator(arguments)?.let {
                 JsonPathFilterExpressionValue.ValueTypeValue.JsonValue(it)
             } ?: JsonPathFilterExpressionValue.ValueTypeValue.Nothing
@@ -28,10 +28,10 @@ sealed class JsonPathFunctionExtension<ReturnType : JsonPathFilterExpressionValu
     class LogicalTypeFunctionExtension(
         vararg argumentTypes: JsonPathFilterExpressionType,
         private val evaluator: (arguments: List<JsonPathFilterExpressionValue>) -> Boolean
-    ) : JsonPathFunctionExtension<JsonPathFilterExpressionValue.LogicalTypeValue>(
+    ) : JsonPathFunctionExtension(
         argumentTypes = argumentTypes,
     ) {
-        override fun evaluate(arguments: List<JsonPathFilterExpressionValue>): JsonPathFilterExpressionValue.LogicalTypeValue {
+        override fun invoke(arguments: List<JsonPathFilterExpressionValue>): JsonPathFilterExpressionValue.LogicalTypeValue {
             return JsonPathFilterExpressionValue.LogicalTypeValue(evaluator(arguments))
         }
     }
@@ -39,10 +39,10 @@ sealed class JsonPathFunctionExtension<ReturnType : JsonPathFilterExpressionValu
     class NodesTypeFunctionExtension(
         vararg argumentTypes: JsonPathFilterExpressionType,
         private val evaluator: (arguments: List<JsonPathFilterExpressionValue>) -> List<JsonElement>
-    ) : JsonPathFunctionExtension<JsonPathFilterExpressionValue.NodesTypeValue.FunctionExtensionResult>(
+    ) : JsonPathFunctionExtension(
         argumentTypes = argumentTypes,
     ) {
-        override fun evaluate(arguments: List<JsonPathFilterExpressionValue>): JsonPathFilterExpressionValue.NodesTypeValue.FunctionExtensionResult {
+        override fun invoke(arguments: List<JsonPathFilterExpressionValue>): JsonPathFilterExpressionValue.NodesTypeValue.FunctionExtensionResult {
             return JsonPathFilterExpressionValue.NodesTypeValue.FunctionExtensionResult(
                 evaluator(arguments)
             )

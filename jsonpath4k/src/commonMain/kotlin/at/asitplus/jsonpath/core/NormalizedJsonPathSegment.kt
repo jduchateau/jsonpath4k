@@ -11,16 +11,14 @@ import kotlin.jvm.JvmInline
 @Serializable
 sealed interface NormalizedJsonPathSegment {
     @Serializable
-    @JvmInline
-    value class NameSegment(val memberName: String) : NormalizedJsonPathSegment {
+    class NameSegment(val memberName: String) : NormalizedJsonPathSegment {
         override fun toString(): String {
             return "[${Rfc9535Utils.escapeToSingleQuotedStringLiteral(memberName)}]"
         }
     }
 
     @Serializable
-    @JvmInline
-    value class IndexSegment(val index: UInt) : NormalizedJsonPathSegment {
+    class IndexSegment(val index: UInt) : NormalizedJsonPathSegment {
         override fun toString(): String {
             return "[$index]"
         }
