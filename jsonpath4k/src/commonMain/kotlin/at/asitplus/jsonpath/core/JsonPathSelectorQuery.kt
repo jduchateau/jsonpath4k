@@ -3,8 +3,8 @@ package at.asitplus.jsonpath.core
 import kotlinx.serialization.json.JsonElement
 
 
-internal class JsonPathSelectorQuery(
-    private val selectors: List<JsonPathSelector>,
+class JsonPathSelectorQuery(
+    val selectors: List<JsonPathSelector>,
 ) : JsonPathQuery {
     override fun invoke(currentNode: JsonElement, rootNode: JsonElement): NodeList {
         var matches = selectors.firstOrNull()?.invoke(
@@ -27,7 +27,7 @@ internal class JsonPathSelectorQuery(
         return matches
     }
 
-    val isSingularQuery: Boolean
+    override val isSingularQuery: Boolean
         get() = selectors.all { // 2.3.5.1.  Syntax: https://datatracker.ietf.org/doc/rfc9535/
             when(it) {
                 JsonPathSelector.RootSelector,

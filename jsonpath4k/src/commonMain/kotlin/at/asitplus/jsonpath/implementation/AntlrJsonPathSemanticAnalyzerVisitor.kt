@@ -228,7 +228,7 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
                             override fun invoke(
                                 currentNode: JsonElement,
                                 rootNode: JsonElement
-                            ): Boolean = logicalExpressionNode.value.evaluate(
+                            ): Boolean = logicalExpressionNode.value.invoke(
                                 JsonPathExpressionEvaluationContext(
                                     currentNode = currentNode,
                                     rootNode = rootNode,
@@ -256,7 +256,7 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
                 JsonPathExpression.FilterExpression.LogicalExpression { context ->
                     JsonPathFilterExpressionValue.LogicalTypeValue(
                         logicalChildrenValues.any {
-                            it.evaluate(context).isTrue
+                            it.invoke(context).isTrue
                         }
                     )
                 }
@@ -278,7 +278,7 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
                 JsonPathExpression.FilterExpression.LogicalExpression { context ->
                     JsonPathFilterExpressionValue.LogicalTypeValue(
                         logicalChildrenValues.all {
-                            it.evaluate(context).isTrue
+                            it.invoke(context).isTrue
                         }
                     )
                 }
@@ -295,7 +295,7 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
             value = if (child.value is JsonPathExpression.FilterExpression.LogicalExpression) {
                 JsonPathExpression.FilterExpression.LogicalExpression { context ->
                     JsonPathFilterExpressionValue.LogicalTypeValue(
-                        child.value.evaluate(context).isTrue == isNotNegated
+                        child.value.invoke(context).isTrue == isNotNegated
                     )
                 }
             } else JsonPathExpression.ErrorType,
@@ -333,10 +333,10 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
              *           rise to conversion as per Section 2.4.2) NodesType.
              */
             val child = visitFunction_expr(functionExpressionContext)
-            val functionResultValue = child.value
+            val functionExpression = child.value
             AbstractSyntaxTree(
                 context = ctx,
-                value = when (functionResultValue) {
+                value = when (functionExpression) {
                     is JsonPathExpression.FilterExpression.ValueExpression -> {
                         JsonPathExpression.ErrorType.also {
                             errorListener?.invalidFunctionExtensionForTestExpression(
@@ -348,7 +348,7 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
                     is JsonPathExpression.FilterExpression.LogicalExpression -> {
                         JsonPathExpression.FilterExpression.LogicalExpression { context ->
                             JsonPathFilterExpressionValue.LogicalTypeValue(
-                                functionResultValue.evaluate(context).isTrue == isNotNegated
+                                functionExpression(context).isTrue == isNotNegated
                             )
                         }
                     }
@@ -356,7 +356,7 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
                     is JsonPathExpression.FilterExpression.NodesExpression.NodesFunctionExpression -> {
                         JsonPathExpression.FilterExpression.LogicalExpression { context ->
                             JsonPathFilterExpressionValue.LogicalTypeValue(
-                                functionResultValue.evaluate(context).nodeList.isNotEmpty() == isNotNegated
+                                functionExpression(context).nodeList.isNotEmpty() == isNotNegated
                             )
                         }
                     }
@@ -407,7 +407,7 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
                         is JsonPathExpression.FilterExpression.NodesExpression -> {
                             JsonPathExpression.FilterExpression.LogicalExpression {
                                 JsonPathFilterExpressionValue.LogicalTypeValue(
-                                    argumentNode.evaluate(it).nodeList.isNotEmpty()
+                                    argumentNode.invoke(it).nodeList.isNotEmpty()
                                 )
                             }
                         }
@@ -487,7 +487,7 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
                     is JsonPathFunctionExtension.LogicalTypeFunctionExtension -> {
                         JsonPathExpression.FilterExpression.LogicalExpression { context ->
                             extension.evaluate(coercedArguments.map {
-                                it.evaluate(context)
+                                it.invoke(context)
                             })
                         }
                     }
@@ -495,7 +495,7 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
                     is JsonPathFunctionExtension.NodesTypeFunctionExtension -> {
                         JsonPathExpression.FilterExpression.NodesExpression.NodesFunctionExpression { context ->
                             extension.evaluate(coercedArguments.map {
-                                it.evaluate(context)
+                                it.invoke(context)
                             })
                         }
                     }
@@ -503,7 +503,7 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
                     is JsonPathFunctionExtension.ValueTypeFunctionExtension -> {
                         JsonPathExpression.FilterExpression.ValueExpression { context ->
                             extension.evaluate(coercedArguments.map {
-                                it.evaluate(context)
+                                it.invoke(context)
                             })
                         }
                     }
@@ -562,8 +562,8 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
             } else if (secondValue !is JsonPathExpression.FilterExpression.ValueExpression) {
                 JsonPathExpression.ErrorType
             } else comparisonExpression(
-                firstComparable = firstValue.evaluate,
-                secondComparable = secondValue.evaluate,
+                firstComparable = firstValue::invoke,
+                secondComparable = secondValue::invoke,
                 ctx.comparisonOp(),
             ),
             children = children,
@@ -579,8 +579,8 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
             it.COMPARISON_OP_EQUALS() != null -> JsonPathExpression.FilterExpression.LogicalExpression { context ->
                 JsonPathFilterExpressionValue.LogicalTypeValue(
                     this.evaluateComparisonEquals(
-                        firstComparable.invoke(context),
-                        secondComparable.invoke(context),
+                        firstComparable(context),
+                        secondComparable(context),
                     )
                 )
             }
@@ -588,8 +588,8 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
             it.COMPARISON_OP_SMALLER_THAN() != null -> JsonPathExpression.FilterExpression.LogicalExpression { context ->
                 JsonPathFilterExpressionValue.LogicalTypeValue(
                     evaluateComparisonSmallerThan(
-                        firstComparable.invoke(context),
-                        secondComparable.invoke(context),
+                        firstComparable(context),
+                        secondComparable(context),
                     )
                 )
             }
@@ -597,20 +597,22 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
             it.COMPARISON_OP_NOT_EQUALS() != null -> JsonPathExpression.FilterExpression.LogicalExpression { context ->
                 JsonPathFilterExpressionValue.LogicalTypeValue(
                     !this.evaluateComparisonEquals(
-                        firstComparable.invoke(context),
-                        secondComparable.invoke(context),
+                        firstComparable(context),
+                        secondComparable(context),
                     )
                 )
             }
 
             it.COMPARISON_OP_SMALLER_THAN_OR_EQUALS() != null -> JsonPathExpression.FilterExpression.LogicalExpression { context ->
+                val firstValue = firstComparable(context)
+                val secondValue = secondComparable(context)
                 JsonPathFilterExpressionValue.LogicalTypeValue(
                     evaluateComparisonSmallerThan(
-                        firstComparable.invoke(context),
-                        secondComparable.invoke(context),
+                        firstValue,
+                        secondValue,
                     ) or this.evaluateComparisonEquals(
-                        firstComparable.invoke(context),
-                        secondComparable.invoke(context),
+                        firstValue,
+                        secondValue,
                     )
                 )
             }
@@ -618,20 +620,22 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
             it.COMPARISON_OP_GREATER_THAN() != null -> JsonPathExpression.FilterExpression.LogicalExpression { context ->
                 JsonPathFilterExpressionValue.LogicalTypeValue(
                     evaluateComparisonSmallerThan(
-                        secondComparable.invoke(context),
-                        firstComparable.invoke(context),
+                        secondComparable(context),
+                        firstComparable(context),
                     )
                 )
             }
 
             it.COMPARISON_OP_GREATER_THAN_OR_EQUALS() != null -> JsonPathExpression.FilterExpression.LogicalExpression { context ->
+                val firstValue = firstComparable(context)
+                val secondValue = secondComparable(context)
                 JsonPathFilterExpressionValue.LogicalTypeValue(
                     evaluateComparisonSmallerThan(
-                        secondComparable.invoke(context),
-                        firstComparable.invoke(context),
+                        secondValue,
+                        firstValue,
                     ) or this.evaluateComparisonEquals(
-                        firstComparable.invoke(context),
-                        secondComparable.invoke(context),
+                        firstValue,
+                        secondValue,
                     )
                 )
             }

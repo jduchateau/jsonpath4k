@@ -67,6 +67,9 @@ class DependencyManagementTest : FreeSpec({
                 functionExtensionRetriever: (String) -> JsonPathFunctionExtension<*>?,
             ): JsonPathQuery {
                 return object : JsonPathQuery {
+                    override val isSingularQuery: Boolean
+                        get() = true
+
                     override fun invoke(currentNode: JsonElement, rootNode: JsonElement): NodeList {
                         return listOf()
                     }
