@@ -26,4 +26,28 @@ class NormalizedJsonPath(
     override fun toString(): String {
         return "$${segments.joinToString("")}"
     }
+
+    /**
+     * Throws an exception if using shorthand notation is not possible.
+     */
+    fun toShorthandNotationThrowing(): String {
+        return "$${segments.joinToString("") {
+            when(it) {
+                is NormalizedJsonPathSegment.IndexSegment -> it.toString()
+                is NormalizedJsonPathSegment.NameSegment -> it.toShorthandNotationThrowing()
+            }
+        }}"
+    }
+
+    /**
+     * Falls back to bracket notation if using shorthand is not possible for a segment
+     */
+    fun toShorthandNotationIfPossible(): String {
+        return "$${segments.joinToString("") {
+            when(it) {
+                is NormalizedJsonPathSegment.IndexSegment -> it.toString()
+                is NormalizedJsonPathSegment.NameSegment -> it.toShorthandNotationIfPossible()
+            }
+        }}"
+    }
 }

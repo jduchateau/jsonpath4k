@@ -1,5 +1,4 @@
 import com.strumenta.antlrkotlin.gradle.AntlrKotlinTask
-import org.apache.tools.ant.taskdefs.condition.Os
 import org.jetbrains.dokka.gradle.DokkaTask
 import org.jetbrains.dokka.gradle.DokkaTaskPartial
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -8,6 +7,7 @@ import org.jetbrains.kotlin.gradle.dsl.kotlinExtension
 import org.jetbrains.kotlin.gradle.plugin.mpp.BitcodeEmbeddingMode
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFrameworkConfig
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     alias(libs.plugins.android.library)
@@ -25,7 +25,6 @@ val artifactVersion: String by extra
 group = "at.asitplus"
 version = artifactVersion
 
-
 repositories {
     google()
     maven("https://s01.oss.sonatype.org/content/repositories/snapshots") //KOTEST snapshot
@@ -33,27 +32,12 @@ repositories {
 }
 
 
-val SRCDIR_ANTRL = "src/gen/kotlin"
-
-//HACK THE PLANET (i.e. regenerate every time)
-val SKIP_GEN = "GRADLE_SKIP_ANTLR_GENT_JSONPATH"
-if (System.getenv(SKIP_GEN) != "true") {
-    layout.projectDirectory.dir(SRCDIR_ANTRL).asFile.deleteRecursively()
-    println("> Manually invoking generateKotlinGrammarSource ")
-    Runtime.getRuntime().exec(
-        arrayOf(if (!Os.isFamily(Os.FAMILY_WINDOWS)) "./gradlew" else "./gradlew.bat", "generateKotlinGrammarSource"),
-        arrayOf("$SKIP_GEN=true")
-    ).also { proc ->
-        proc.errorStream.bufferedReader().forEachLine { System.err.println(it) }
-        proc.inputStream.bufferedReader().forEachLine { println(it) }
-    }.waitFor()
-}
-
+val SRCDIR_ANTRL = "generated/antlr"
 val generateKotlinGrammarSource = tasks.register<AntlrKotlinTask>("generateKotlinGrammarSource") {
     dependsOn("cleanGenerateKotlinGrammarSource")
 
     // compiling any *.g4 files within the project
-    source = fileTree(layout.projectDirectory) {
+    source = fileTree(layout.projectDirectory.dir("src")) {
         include("**/*.g4")
     }
 
@@ -66,10 +50,8 @@ val generateKotlinGrammarSource = tasks.register<AntlrKotlinTask>("generateKotli
 
     // Generated files are output inside src/gen/kotlin/{package-name}
     val outDir = "$SRCDIR_ANTRL/${packageName!!.replace(".", "/")}"
-    outputDirectory = layout.projectDirectory.dir(outDir).asFile
-
+    outputDirectory = layout.buildDirectory.dir(outDir).get().asFile
 }
-
 
 
 kotlin {
@@ -100,8 +82,8 @@ kotlin {
 
 
     sourceSets {
-        commonMain{
-            kotlin.srcDir(SRCDIR_ANTRL)
+        commonMain {
+            kotlin.srcDir(layout.buildDirectory.dir(SRCDIR_ANTRL))
             dependencies {
                 implementation(libs.antlr.kotlin)
                 implementation(libs.jetbrains.kotlinx.serialization)
@@ -125,6 +107,13 @@ kotlin {
             }
         }
     }
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.dsl.KotlinCompile<*>> {
+    dependsOn(generateKotlinGrammarSource)
+}
+tasks.withType<KotlinCompile> {
+    dependsOn(generateKotlinGrammarSource)
 }
 
 exportIosFramework("JsonPath4K")
@@ -290,5 +279,4 @@ afterEvaluate {
             logger.lifecycle("")
         }
     }
-
 }

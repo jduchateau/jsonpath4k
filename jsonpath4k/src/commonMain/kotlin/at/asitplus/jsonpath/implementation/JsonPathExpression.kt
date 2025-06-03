@@ -92,6 +92,9 @@ internal sealed interface JsonPathExpression {
             }
 
             fun interface NodesFunctionExpression : NodesExpression {
+                // TODO: Remove when MWE works (projected to be fixed in 2.2.0): https://pl.kotl.in/JSudCCRko
+                override val expressionType
+                    get() = JsonPathFilterExpressionType.NodesType
                 override fun invoke(context: JsonPathExpressionEvaluationContext): JsonPathFilterExpressionValue.NodesTypeValue.FunctionExtensionResult
             }
         }

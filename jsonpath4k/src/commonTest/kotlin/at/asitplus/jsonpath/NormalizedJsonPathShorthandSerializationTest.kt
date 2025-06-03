@@ -1,0 +1,42 @@
+package at.asitplus.jsonpath
+
+import at.asitplus.jsonpath.core.NormalizedJsonPath
+import at.asitplus.jsonpath.core.NormalizedJsonPathSegment
+import io.kotest.assertions.throwables.shouldNotThrowAny
+import io.kotest.assertions.throwables.shouldThrowAny
+import io.kotest.core.spec.style.FreeSpec
+import io.kotest.datatest.withData
+import io.kotest.matchers.shouldBe
+
+class NormalizedJsonPathShorthandSerializationTest : FreeSpec({
+    "should be serializable as member name shorthand" - {
+        withData(
+            "test",
+            "test_123",
+            "t1",
+        ) {
+            shouldNotThrowAny {
+                val path = NormalizedJsonPath() + NormalizedJsonPathSegment.NameSegment(it)
+                path.toShorthandNotationThrowing() shouldBe "$.$it"
+                path.toShorthandNotationIfPossible() shouldBe "$.$it"
+            }
+        }
+    }
+    "should not be serializable as member name shorthand" - {
+        withData(
+            "1",
+            "*",
+            "'",
+            "\"",
+            "test-data",
+        ) {
+            val path = NormalizedJsonPath() + NormalizedJsonPathSegment.NameSegment(it)
+            shouldNotThrowAny {
+                path.toShorthandNotationIfPossible()
+            } shouldBe path.toString()
+            shouldThrowAny {
+                path.toShorthandNotationThrowing()
+            }
+        }
+    }
+})
