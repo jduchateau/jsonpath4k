@@ -15,7 +15,7 @@ class MemberNameShorthandSerializationTest : FreeSpec({
             "t1",
         ) {
             shouldNotThrowAny {
-                NormalizedJsonPathSegment.NameSegment(it).toShorthandNotationThrowing()
+                NormalizedJsonPathSegment.NameSegment(it).toShorthandNotation()
             } shouldBe ".$it"
         }
     }
@@ -28,7 +28,7 @@ class MemberNameShorthandSerializationTest : FreeSpec({
             "test-data",
         ) {
             shouldThrowAny {
-                NormalizedJsonPathSegment.NameSegment(it).toShorthandNotationThrowing() shouldBe ".$it"
+                NormalizedJsonPathSegment.NameSegment(it).toShorthandNotation() shouldBe ".$it"
             }
         }
     }

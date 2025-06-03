@@ -10,6 +10,8 @@
  * Change: `JsonPathQuery` now exposes the compiled selectors
  * Add: `JsonPathQuery.isSingularQuery`
  * Add: `NormalizedJsonPath.plus` for simplified api
+ * Add: `NormalizedJsonPath.toShorthandNameSegmentNotation` for shorthand representation of name segments
+ * Add: `NormalizedJsonPathSegment.NameSegment.toShorthandNotation` for shorthand representation
 
 # Release 2.4.1
 * Introduce dedicated Android artefact targeting JDK 1.8

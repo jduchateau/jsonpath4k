@@ -17,8 +17,7 @@ class NormalizedJsonPathShorthandSerializationTest : FreeSpec({
         ) {
             shouldNotThrowAny {
                 val path = NormalizedJsonPath() + NormalizedJsonPathSegment.NameSegment(it)
-                path.toShorthandNotationThrowing() shouldBe "$.$it"
-                path.toShorthandNotationIfPossible() shouldBe "$.$it"
+                path.toShorthandNameSegmentNotation() shouldBe "$.$it"
             }
         }
     }
@@ -31,11 +30,8 @@ class NormalizedJsonPathShorthandSerializationTest : FreeSpec({
             "test-data",
         ) {
             val path = NormalizedJsonPath() + NormalizedJsonPathSegment.NameSegment(it)
-            shouldNotThrowAny {
-                path.toShorthandNotationIfPossible()
-            } shouldBe path.toString()
             shouldThrowAny {
-                path.toShorthandNotationThrowing()
+                path.toShorthandNameSegmentNotation()
             }
         }
     }
