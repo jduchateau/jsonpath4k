@@ -27,9 +27,7 @@ class NormalizedJsonPath(
         return "$${segments.joinToString("")}"
     }
 
-    /**
-     * Throws an exception if using shorthand notation is not possible.
-     */
+    @Throws(Throwable::class)
     fun toShorthandNameSegmentNotation(): String {
         return "$${segments.joinToString("") {
             when(it) {

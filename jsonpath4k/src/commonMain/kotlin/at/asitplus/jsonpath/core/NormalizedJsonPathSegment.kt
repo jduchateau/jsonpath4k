@@ -20,9 +20,7 @@ sealed interface NormalizedJsonPathSegment {
             return "[${Rfc9535Utils.escapeToSingleQuotedStringLiteral(memberName)}]"
         }
 
-        /**
-         * Throws an exception if using shorthand notation is not possible.
-         */
+        @Throws(Throwable::class)
         fun toShorthandNotation(): String {
             val tokens = JsonPathLexer(CharStreams.fromString(".$memberName")).allTokens
 
