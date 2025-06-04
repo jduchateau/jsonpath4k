@@ -17,11 +17,11 @@ sealed class JsonPathFunctionExtension(
 
     class ValueTypeFunctionExtension(
         vararg argumentTypes: JsonPathFilterExpressionType,
-        private val evaluator: (arguments: List<JsonPathFilterExpressionValue>) -> JsonElement?
+        private val evaluator: (arguments: List<JsonPathFilterExpressionValue>) -> JsonElement?,
     ) : JsonPathFunctionExtension(
         argumentTypes = argumentTypes,
     ) {
-        override fun invoke(arguments: List<JsonPathFilterExpressionValue>): JsonPathFilterExpressionValue.ValueTypeValue {
+        override operator fun invoke(arguments: List<JsonPathFilterExpressionValue>): JsonPathFilterExpressionValue.ValueTypeValue {
             return evaluator(arguments)?.let {
                 JsonPathFilterExpressionValue.ValueTypeValue.JsonValue(it)
             } ?: JsonPathFilterExpressionValue.ValueTypeValue.Nothing
@@ -30,22 +30,22 @@ sealed class JsonPathFunctionExtension(
 
     class LogicalTypeFunctionExtension(
         vararg argumentTypes: JsonPathFilterExpressionType,
-        private val evaluator: (arguments: List<JsonPathFilterExpressionValue>) -> Boolean
+        private val evaluator: (arguments: List<JsonPathFilterExpressionValue>) -> Boolean,
     ) : JsonPathFunctionExtension(
         argumentTypes = argumentTypes,
     ) {
-        override fun invoke(arguments: List<JsonPathFilterExpressionValue>): JsonPathFilterExpressionValue.LogicalTypeValue {
+        override operator fun invoke(arguments: List<JsonPathFilterExpressionValue>): JsonPathFilterExpressionValue.LogicalTypeValue {
             return JsonPathFilterExpressionValue.LogicalTypeValue(evaluator(arguments))
         }
     }
 
     class NodesTypeFunctionExtension(
         vararg argumentTypes: JsonPathFilterExpressionType,
-        private val evaluator: (arguments: List<JsonPathFilterExpressionValue>) -> List<JsonElement>
+        private val evaluator: (arguments: List<JsonPathFilterExpressionValue>) -> List<JsonElement>,
     ) : JsonPathFunctionExtension(
         argumentTypes = argumentTypes,
     ) {
-        override fun invoke(arguments: List<JsonPathFilterExpressionValue>): JsonPathFilterExpressionValue.NodesTypeValue.FunctionExtensionResult {
+        override operator fun invoke(arguments: List<JsonPathFilterExpressionValue>): JsonPathFilterExpressionValue.NodesTypeValue.FunctionExtensionResult {
             return JsonPathFilterExpressionValue.NodesTypeValue.FunctionExtensionResult(
                 evaluator(arguments)
             )
