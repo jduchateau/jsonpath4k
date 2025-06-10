@@ -1,5 +1,5 @@
 [versions]
-antlr-kotlin = "1.0.0"
+antlr-kotlin = "1.0.3"
 kotest = "5.9.1"
 kotest-plugin = "6.0.0.M1"
 jetbrains-kotlin = "2.1.0"

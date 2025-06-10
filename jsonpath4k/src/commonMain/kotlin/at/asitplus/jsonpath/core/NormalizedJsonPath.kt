@@ -12,11 +12,28 @@ class NormalizedJsonPath(
     val segments: List<NormalizedJsonPathSegment> = listOf(),
 ) {
     constructor(vararg segments: NormalizedJsonPathSegment) : this(segments = segments.asList())
+
     operator fun plus(other: NormalizedJsonPath): NormalizedJsonPath {
         return NormalizedJsonPath(this.segments + other.segments)
     }
 
+    operator fun plus(segment: NormalizedJsonPathSegment) = this + NormalizedJsonPath(segment)
+
+    operator fun plus(memberName: String) = this + NormalizedJsonPathSegment.NameSegment(memberName)
+
+    operator fun plus(index: UInt) = this + NormalizedJsonPathSegment.IndexSegment(index)
+
     override fun toString(): String {
         return "$${segments.joinToString("")}"
+    }
+
+    @Throws(Throwable::class)
+    fun toShorthandNameSegmentNotation(): String {
+        return "$${segments.joinToString("") {
+            when(it) {
+                is NormalizedJsonPathSegment.IndexSegment -> it.toString()
+                is NormalizedJsonPathSegment.NameSegment -> it.toShorthandNotation()
+            }
+        }}"
     }
 }
