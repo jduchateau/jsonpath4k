@@ -27,12 +27,28 @@ class NormalizedJsonPath(
         return "$${segments.joinToString("")}"
     }
 
+    fun toNormalizedJsonPathString() = toString()
+
     @Throws(Throwable::class)
     fun toShorthandNameSegmentNotation(): String {
         return "$${segments.joinToString("") {
             when(it) {
                 is NormalizedJsonPathSegment.IndexSegment -> it.toString()
                 is NormalizedJsonPathSegment.NameSegment -> it.toShorthandNotation()
+            }
+        }}"
+    }
+
+    @Throws(Throwable::class)
+    fun toShorthandNameSegmentNotationWherePossible(): String {
+        return "$${segments.joinToString("") {
+            when(it) {
+                is NormalizedJsonPathSegment.IndexSegment -> it.toNormalizedJsonPathSegmentString()
+                is NormalizedJsonPathSegment.NameSegment -> try {
+                    it.toShorthandNotation()
+                } catch (_: Throwable) {
+                    it.toNormalizedJsonPathSegmentString()
+                }
             }
         }}"
     }

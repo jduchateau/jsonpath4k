@@ -14,8 +14,12 @@ import org.antlr.v4.kotlinruntime.ListTokenSource
  */
 @Serializable
 sealed interface NormalizedJsonPathSegment {
+    fun toNormalizedJsonPathSegmentString(): String
+
     @Serializable
     class NameSegment(val memberName: String) : NormalizedJsonPathSegment {
+        override fun toNormalizedJsonPathSegmentString() = toString()
+
         override fun toString(): String {
             return "[${Rfc9535Utils.escapeToSingleQuotedStringLiteral(memberName)}]"
         }
@@ -45,6 +49,8 @@ sealed interface NormalizedJsonPathSegment {
 
     @Serializable
     class IndexSegment(val index: UInt) : NormalizedJsonPathSegment {
+        override fun toNormalizedJsonPathSegmentString() = toString()
+
         override fun toString(): String {
             return "[$index]"
         }
