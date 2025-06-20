@@ -1,15 +1,13 @@
 package at.asitplus.jsonpath.implementation
 
-import at.asitplus.jsonpath.core.FilterPredicate
 import at.asitplus.jsonpath.core.JsonPathFilterExpressionType
 import at.asitplus.jsonpath.core.JsonPathFilterExpressionValue
 import at.asitplus.jsonpath.core.JsonPathFunctionExtension
 import at.asitplus.jsonpath.core.JsonPathSelector
-import at.asitplus.jsonpath.core.JsonPathSelectorQuery
+import at.asitplus.jsonpath.core.JsonPathQuery
 import at.asitplus.jsonpath.generated.JsonPathParser
 import at.asitplus.jsonpath.generated.JsonPathParserBaseVisitor
 import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -28,7 +26,7 @@ import org.antlr.v4.kotlinruntime.tree.TerminalNode
  */
 internal class AntlrJsonPathSemanticAnalyzerVisitor(
     private val errorListener: AntlrJsonPathSemanticAnalyzerErrorListener?,
-    private val functionExtensionRetriever: (String) -> JsonPathFunctionExtension<*>?,
+    private val functionExtensionRetriever: (String) -> JsonPathFunctionExtension?,
 ) : JsonPathParserBaseVisitor<AbstractSyntaxTree<out JsonPathExpression>>() {
     override fun defaultResult(): AbstractSyntaxTree<JsonPathExpression> {
         return AbstractSyntaxTree(context = null, value = JsonPathExpression.NoType)
@@ -223,19 +221,14 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
             context = ctx,
             value = if (logicalExpressionNode.value is JsonPathExpression.FilterExpression.LogicalExpression) {
                 JsonPathExpression.SelectorExpression(
-                    JsonPathSelector.FilterSelector(
-                        object : FilterPredicate {
-                            override fun invoke(
-                                currentNode: JsonElement,
-                                rootNode: JsonElement
-                            ): Boolean = logicalExpressionNode.value.evaluate(
-                                JsonPathExpressionEvaluationContext(
-                                    currentNode = currentNode,
-                                    rootNode = rootNode,
-                                )
-                            ).isTrue
-                        }
-                    )
+                    JsonPathSelector.FilterSelector { currentNode, rootNode ->
+                        logicalExpressionNode.value.invoke(
+                            JsonPathExpressionEvaluationContext(
+                                currentNode = currentNode,
+                                rootNode = rootNode,
+                            )
+                        ).isTrue
+                    }
                 )
             } else JsonPathExpression.ErrorType,
             children = listOf(logicalExpressionNode)
@@ -247,16 +240,16 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
         val children = ctx.logical_and_expr().map {
             visitLogical_and_expr(it)
         }
-        val logicalChildrenValues = children.map { it.value }
+        val logicalChildExpressions = children.map { it.value }
             .filterIsInstance<JsonPathExpression.FilterExpression.LogicalExpression>()
 
         return AbstractSyntaxTree(
             context = ctx,
-            value = if (logicalChildrenValues.size == children.size) {
+            value = if (logicalChildExpressions.size == children.size) {
                 JsonPathExpression.FilterExpression.LogicalExpression { context ->
                     JsonPathFilterExpressionValue.LogicalTypeValue(
-                        logicalChildrenValues.any {
-                            it.evaluate(context).isTrue
+                        logicalChildExpressions.any {
+                            it(context).isTrue
                         }
                     )
                 }
@@ -278,7 +271,7 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
                 JsonPathExpression.FilterExpression.LogicalExpression { context ->
                     JsonPathFilterExpressionValue.LogicalTypeValue(
                         logicalChildrenValues.all {
-                            it.evaluate(context).isTrue
+                            it.invoke(context).isTrue
                         }
                     )
                 }
@@ -295,7 +288,7 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
             value = if (child.value is JsonPathExpression.FilterExpression.LogicalExpression) {
                 JsonPathExpression.FilterExpression.LogicalExpression { context ->
                     JsonPathFilterExpressionValue.LogicalTypeValue(
-                        child.value.evaluate(context).isTrue == isNotNegated
+                        child.value.invoke(context).isTrue == isNotNegated
                     )
                 }
             } else JsonPathExpression.ErrorType,
@@ -333,10 +326,10 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
              *           rise to conversion as per Section 2.4.2) NodesType.
              */
             val child = visitFunction_expr(functionExpressionContext)
-            val functionResultValue = child.value
+            val functionExpression = child.value
             AbstractSyntaxTree(
                 context = ctx,
-                value = when (functionResultValue) {
+                value = when (functionExpression) {
                     is JsonPathExpression.FilterExpression.ValueExpression -> {
                         JsonPathExpression.ErrorType.also {
                             errorListener?.invalidFunctionExtensionForTestExpression(
@@ -348,7 +341,7 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
                     is JsonPathExpression.FilterExpression.LogicalExpression -> {
                         JsonPathExpression.FilterExpression.LogicalExpression { context ->
                             JsonPathFilterExpressionValue.LogicalTypeValue(
-                                functionResultValue.evaluate(context).isTrue == isNotNegated
+                                functionExpression(context).isTrue == isNotNegated
                             )
                         }
                     }
@@ -356,7 +349,7 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
                     is JsonPathExpression.FilterExpression.NodesExpression.NodesFunctionExpression -> {
                         JsonPathExpression.FilterExpression.LogicalExpression { context ->
                             JsonPathFilterExpressionValue.LogicalTypeValue(
-                                functionResultValue.evaluate(context).nodeList.isNotEmpty() == isNotNegated
+                                functionExpression(context).nodeList.isNotEmpty() == isNotNegated
                             )
                         }
                     }
@@ -378,7 +371,7 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
             visitFunction_argument(it)
         }
 
-        val extension = functionExtensionRetriever.invoke(ctx.FUNCTION_NAME().text)
+        val extension = functionExtensionRetriever(ctx.FUNCTION_NAME().text)
             ?: return AbstractSyntaxTree(
                 context = ctx,
                 value = JsonPathExpression.ErrorType,
@@ -407,7 +400,7 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
                         is JsonPathExpression.FilterExpression.NodesExpression -> {
                             JsonPathExpression.FilterExpression.LogicalExpression {
                                 JsonPathFilterExpressionValue.LogicalTypeValue(
-                                    argumentNode.evaluate(it).nodeList.isNotEmpty()
+                                    argumentNode.invoke(it).nodeList.isNotEmpty()
                                 )
                             }
                         }
@@ -462,8 +455,7 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
                 it
             }
 
-        val isValidFunctionCall =
-            isArglistSizeConsistent and isCoercedArgumentTypesMatching
+        val isValidFunctionCall = isArglistSizeConsistent and isCoercedArgumentTypesMatching
 
         if (isValidFunctionCall == false) {
             errorListener?.invalidArglistForFunctionExtension(
@@ -480,30 +472,30 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
         return AbstractSyntaxTree(
             context = ctx,
             value = if (isValidFunctionCall) {
-                val coercedArguments =
+                val filterArguments =
                     coercedArgumentExpressions.filterIsInstance<JsonPathExpression.FilterExpression>()
 
                 when (extension) {
                     is JsonPathFunctionExtension.LogicalTypeFunctionExtension -> {
                         JsonPathExpression.FilterExpression.LogicalExpression { context ->
-                            extension.evaluate(coercedArguments.map {
-                                it.evaluate(context)
+                            extension.invoke(filterArguments.map { filterExpression ->
+                                filterExpression(context)
                             })
                         }
                     }
 
                     is JsonPathFunctionExtension.NodesTypeFunctionExtension -> {
                         JsonPathExpression.FilterExpression.NodesExpression.NodesFunctionExpression { context ->
-                            extension.evaluate(coercedArguments.map {
-                                it.evaluate(context)
+                            extension(filterArguments.map { filterExpression ->
+                                filterExpression(context)
                             })
                         }
                     }
 
                     is JsonPathFunctionExtension.ValueTypeFunctionExtension -> {
                         JsonPathExpression.FilterExpression.ValueExpression { context ->
-                            extension.evaluate(coercedArguments.map {
-                                it.evaluate(context)
+                            extension(filterArguments.map { filterExpression ->
+                                filterExpression(context)
                             })
                         }
                     }
@@ -562,8 +554,8 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
             } else if (secondValue !is JsonPathExpression.FilterExpression.ValueExpression) {
                 JsonPathExpression.ErrorType
             } else comparisonExpression(
-                firstComparable = firstValue.evaluate,
-                secondComparable = secondValue.evaluate,
+                firstComparable = firstValue::invoke,
+                secondComparable = secondValue::invoke,
                 ctx.comparisonOp(),
             ),
             children = children,
@@ -579,8 +571,8 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
             it.COMPARISON_OP_EQUALS() != null -> JsonPathExpression.FilterExpression.LogicalExpression { context ->
                 JsonPathFilterExpressionValue.LogicalTypeValue(
                     this.evaluateComparisonEquals(
-                        firstComparable.invoke(context),
-                        secondComparable.invoke(context),
+                        firstComparable(context),
+                        secondComparable(context),
                     )
                 )
             }
@@ -588,8 +580,8 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
             it.COMPARISON_OP_SMALLER_THAN() != null -> JsonPathExpression.FilterExpression.LogicalExpression { context ->
                 JsonPathFilterExpressionValue.LogicalTypeValue(
                     evaluateComparisonSmallerThan(
-                        firstComparable.invoke(context),
-                        secondComparable.invoke(context),
+                        firstComparable(context),
+                        secondComparable(context),
                     )
                 )
             }
@@ -597,20 +589,22 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
             it.COMPARISON_OP_NOT_EQUALS() != null -> JsonPathExpression.FilterExpression.LogicalExpression { context ->
                 JsonPathFilterExpressionValue.LogicalTypeValue(
                     !this.evaluateComparisonEquals(
-                        firstComparable.invoke(context),
-                        secondComparable.invoke(context),
+                        firstComparable(context),
+                        secondComparable(context),
                     )
                 )
             }
 
             it.COMPARISON_OP_SMALLER_THAN_OR_EQUALS() != null -> JsonPathExpression.FilterExpression.LogicalExpression { context ->
+                val firstValue = firstComparable(context)
+                val secondValue = secondComparable(context)
                 JsonPathFilterExpressionValue.LogicalTypeValue(
                     evaluateComparisonSmallerThan(
-                        firstComparable.invoke(context),
-                        secondComparable.invoke(context),
+                        firstValue,
+                        secondValue,
                     ) or this.evaluateComparisonEquals(
-                        firstComparable.invoke(context),
-                        secondComparable.invoke(context),
+                        firstValue,
+                        secondValue,
                     )
                 )
             }
@@ -618,20 +612,22 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
             it.COMPARISON_OP_GREATER_THAN() != null -> JsonPathExpression.FilterExpression.LogicalExpression { context ->
                 JsonPathFilterExpressionValue.LogicalTypeValue(
                     evaluateComparisonSmallerThan(
-                        secondComparable.invoke(context),
-                        firstComparable.invoke(context),
+                        secondComparable(context),
+                        firstComparable(context),
                     )
                 )
             }
 
             it.COMPARISON_OP_GREATER_THAN_OR_EQUALS() != null -> JsonPathExpression.FilterExpression.LogicalExpression { context ->
+                val firstValue = firstComparable(context)
+                val secondValue = secondComparable(context)
                 JsonPathFilterExpressionValue.LogicalTypeValue(
                     evaluateComparisonSmallerThan(
-                        secondComparable.invoke(context),
-                        firstComparable.invoke(context),
+                        secondValue,
+                        firstValue,
                     ) or this.evaluateComparisonEquals(
-                        firstComparable.invoke(context),
-                        secondComparable.invoke(context),
+                        firstValue,
+                        secondValue,
                     )
                 )
             }
@@ -766,7 +762,7 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
     }
 
     // primitives
-    override fun visitStringLiteral(ctx: JsonPathParser.StringLiteralContext): AbstractSyntaxTree<out JsonPathExpression> {
+    override fun visitStringLiteral(ctx: JsonPathParser.StringLiteralContext): AbstractSyntaxTree<out JsonPathExpression.FilterExpression.ValueExpression> {
         return AbstractSyntaxTree(
             context = ctx,
             value = JsonPathExpression.FilterExpression.ValueExpression {
@@ -777,7 +773,7 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
         )
     }
 
-    override fun visitNumber_expression(ctx: JsonPathParser.Number_expressionContext): AbstractSyntaxTree<out JsonPathExpression> {
+    override fun visitNumber_expression(ctx: JsonPathParser.Number_expressionContext): AbstractSyntaxTree<out JsonPathExpression.FilterExpression.ValueExpression> {
         return AbstractSyntaxTree(
             context = ctx,
             value = JsonPathExpression.FilterExpression.ValueExpression {
@@ -788,7 +784,7 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
         )
     }
 
-    override fun visitInt_expression(ctx: JsonPathParser.Int_expressionContext): AbstractSyntaxTree<out JsonPathExpression> {
+    override fun visitInt_expression(ctx: JsonPathParser.Int_expressionContext): AbstractSyntaxTree<out JsonPathExpression.FilterExpression.ValueExpression> {
         return AbstractSyntaxTree(
             context = ctx,
             value = JsonPathExpression.FilterExpression.ValueExpression {
@@ -799,7 +795,7 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
         )
     }
 
-    override fun visitTrue_expression(ctx: JsonPathParser.True_expressionContext): AbstractSyntaxTree<out JsonPathExpression> {
+    override fun visitTrue_expression(ctx: JsonPathParser.True_expressionContext): AbstractSyntaxTree<out JsonPathExpression.FilterExpression.ValueExpression> {
         return AbstractSyntaxTree(
             context = ctx,
             value = JsonPathExpression.FilterExpression.ValueExpression {
@@ -810,7 +806,7 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
         )
     }
 
-    override fun visitFalse_expression(ctx: JsonPathParser.False_expressionContext): AbstractSyntaxTree<out JsonPathExpression> {
+    override fun visitFalse_expression(ctx: JsonPathParser.False_expressionContext): AbstractSyntaxTree<out JsonPathExpression.FilterExpression.ValueExpression> {
         return AbstractSyntaxTree(
             context = ctx,
             value = JsonPathExpression.FilterExpression.ValueExpression {
@@ -821,7 +817,7 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
         )
     }
 
-    override fun visitNull_expression(ctx: JsonPathParser.Null_expressionContext): AbstractSyntaxTree<out JsonPathExpression> {
+    override fun visitNull_expression(ctx: JsonPathParser.Null_expressionContext): AbstractSyntaxTree<out JsonPathExpression.FilterExpression.ValueExpression> {
         return AbstractSyntaxTree(
             context = ctx,
             value = JsonPathExpression.FilterExpression.ValueExpression {
@@ -832,7 +828,6 @@ internal class AntlrJsonPathSemanticAnalyzerVisitor(
         )
     }
 }
-
 
 internal class QueryNodeBuilder(
     private val context: ParserRuleContext,
@@ -850,16 +845,10 @@ internal class QueryNodeBuilder(
         val value = if (childrenValues.size != childrenSelectors.size) {
             JsonPathExpression.ErrorType
         } else {
-            val query = JsonPathSelectorQuery(childrenSelectors.map { it.selector })
-            if (query.isSingularQuery) {
-                JsonPathExpression.FilterExpression.NodesExpression.FilterQueryExpression.SingularQueryExpression(
-                    query
-                )
-            } else {
-                JsonPathExpression.FilterExpression.NodesExpression.FilterQueryExpression.NonSingularQueryExpression(
-                    query
-                )
-            }
+            val query = JsonPathQuery(childrenSelectors.map { it.selector })
+            JsonPathExpression.FilterExpression.NodesExpression.FilterQueryExpression(
+                query
+            )
         }
 
         return AbstractSyntaxTree(

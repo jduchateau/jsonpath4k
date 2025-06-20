@@ -50,19 +50,24 @@ val normalizedPath = nodeList[0].normalizedJsonPath
 This library supports the function extensions specified in [RFC9535](https://www.rfc-editor.org/rfc/rfc9535.html#name-function-extensions) by default. 
 
 ### Custom function extensions
-Custom function extensions can be added using `JsonPathDependencyManager.functionExtensionRepository.addExtension`:
+Custom function extensions can be added using `JsonPath.defaultFunctionExtensionRepository.addExtension`:
 ```kotlin
 // adding a logical type function extension with 1 parameter of type NodesType
-JsonPathDependencyManager.functionExtensionRepository.addExtension("foo") {
+JsonPath.defaultFunctionExtensionRepository.addExtension("foo") {
     JsonPathFunctionExtension.LogicalTypeFunctionExtension(
-        JsonPathFilterExpressionType.NodesType
+        JsonPathFilterExpressionType.ValueType,
+        JsonPathFilterExpressionType.LogicalType,
+        JsonPathFilterExpressionType.NodesType,
     ) {
+        val value0 = it[0] as JsonPathFilterExpressionValue.ValueTypeValue
+        val value1 = it[1] as JsonPathFilterExpressionValue.LogicalTypeValue
+        val value2 = it[2] as JsonPathFilterExpressionValue.NodesTypeValue
         true
     }
 }
 
 // adding a value type function extension returning a JsonValue with 2 parameters of type ValueType
-JsonPathDependencyManager.functionExtensionRepository.addExtension("foo") {
+JsonPath.defaultFunctionExtensionRepository.addExtension("foo") {
     JsonPathFunctionExtension.ValueTypeFunctionExtension(
         JsonPathFilterExpressionType.ValueType,
         JsonPathFilterExpressionType.ValueType,
@@ -71,18 +76,18 @@ JsonPathDependencyManager.functionExtensionRepository.addExtension("foo") {
     }
 }
 
-// adding a value type function extension returning the JsonValue with 2 parameters of type ValueType
-JsonPathDependencyManager.functionExtensionRepository.addExtension("foo") {
-    JsonPathFunctionExtension.ValueTypeFunctionExtension(
+// adding a logical type function extension with 2 parameters of type ValueType returning false
+JsonPath.defaultFunctionExtensionRepository.addExtension("foo") {
+    JsonPathFunctionExtension.LogicalTypeFunctionExtension(
         JsonPathFilterExpressionType.ValueType,
         JsonPathFilterExpressionType.ValueType,
     ) {
-        JsonNull
+        false
     }
 }
 
 // adding a value type function extension returning the special value `Nothing` with 2 parameters of type LogicalType
-JsonPathDependencyManager.functionExtensionRepository.addExtension("foo") {
+JsonPath.defaultFunctionExtensionRepository.addExtension("foo") {
     JsonPathFunctionExtension.ValueTypeFunctionExtension(
         JsonPathFilterExpressionType.LogicalType,
         JsonPathFilterExpressionType.LogicalType,
@@ -92,7 +97,7 @@ JsonPathDependencyManager.functionExtensionRepository.addExtension("foo") {
 }
 
 // adding a nodes type function extension with 2 parameters of type ValueType
-JsonPathDependencyManager.functionExtensionRepository.addExtension("foo") {
+JsonPath.defaultFunctionExtensionRepository.addExtension("foo") {
     JsonPathFunctionExtension.NodesTypeFunctionExtension(
         JsonPathFilterExpressionType.ValueType,
         JsonPathFilterExpressionType.ValueType,
@@ -101,29 +106,29 @@ JsonPathDependencyManager.functionExtensionRepository.addExtension("foo") {
     }
 }
 
-// adding a nodes type function extension with 2 parameters of type ValueType
-JsonPathDependencyManager.functionExtensionRepository.addExtension("foo") {
-    JsonPathFunctionExtension.NodesTypeFunctionExtension(
-        JsonPathFilterExpressionType.ValueType,
-        JsonPathFilterExpressionType.ValueType,
+// reimplementing the count function as defined in [RFC9535](https://www.rfc-editor.org/rfc/rfc9535.html#name-function-extensions)
+JsonPath.defaultFunctionExtensionRepository.addExtension("count") {
+    JsonPathFunctionExtension.ValueTypeFunctionExtension(
+        JsonPathFilterExpressionType.NodesType,
     ) {
-        listOf()
+        val nodesTypeValue = it[0] as JsonPathFilterExpressionValue.NodesTypeValue
+        JsonPrimitive(nodesTypeValue.nodeList.size.toUInt())
     }
 }
 ```
 
 ### Removing Function extensions
-Function extensions can be removed from the default repository by setting the value of `JsonPathDependencyManager.functionExtensionRepository` to a new repository.
+Function extensions can be removed from the default repository by setting the value of `JsonPath.defaultFunctionExtensionRepository` to a new repository.
 
-Existing functions can be preserved by exporting them using `JsonPathDependencyManager.functionExtensionRepository.export()` and selectively importing them into the new repository.
+Existing functions can be preserved by exporting them using `JsonPath.defaultFunctionExtensionRepository.export()` and selectively importing them into the new repository.
 
 
 
 ### Testing custom function extensions
-In order to test custom function extensions without polluting the default function extension repository, it is advised to make an export and use the resulting map to build a function extension retriever.
+In order to test custom function extensions without polluting the default function extension repository, it is recommended to make an export and use the resulting map to build a new function extension retriever.
 
 ```kotlin
-val testRetriever = JsonPathDependencyManager.functionExtensionRepository.export().plus(
+val testRetriever = JsonPath.defaultFunctionExtensionRepository.export().plus(
     "foo" to JsonPathFunctionExtension.LogicalTypeFunctionExtension(
         JsonPathFilterExpressionType.ValueType,
         JsonPathFilterExpressionType.ValueType,
@@ -141,7 +146,7 @@ jsonPath.query(buildJsonElement {})
 The default compiler uses Napier for reporting errors. 
 It is possible to implement a custom error listener by extending `AntlrJsonPathCompilerErrorListener` and setting a new default compiler:
 ```kotlin
-JsonPathDependencyManager.compiler = AntlrJsonPathCompiler(
+JsonPath.defaultCompiler = AntlrJsonPathCompiler(
     errorListener = object : AntlrJsonPathCompilerErrorListener {
         //TODO: IMPLEMENT MEMBERS                                                            
     },
