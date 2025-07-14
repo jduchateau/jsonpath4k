@@ -267,6 +267,36 @@ internal fun setupSignDependency() {
     logger.lifecycle("")
     logger.lifecycle("  Making signing tasks run after publish tasks")
     logger.info("")
+    tasks.whenTaskAdded {
+        if (this is Sign) {
+            val publishTasks = tasks.withType<AbstractPublishToMaven>()
+            publishTasks.forEach {
+                it.dependsOn(this)
+                it.mustRunAfter(this)
+            }
+        }
+
+        if (this is AbstractPublishToMaven) {
+            val signTasks = tasks.withType<Sign>()
+            signTasks.forEach {
+                this.dependsOn(it)
+                this.mustRunAfter(it)
+            }
+        }
+
+        if (name=="androidReleaseSourcesJar") {
+            tasks.findByName("generateKotlinGrammarSource")?.let {
+                dependsOn(it)
+                mustRunAfter(it)
+            }
+        }
+        if (name == "generateKotlinGrammarSource") {
+            tasks.filter { it.name== "androidReleaseSourcesJar" }.forEach {
+                it.dependsOn(this)
+                it.mustRunAfter(this)
+            }
+        }
+    }
 
     tasks.withType<Sign>().configureEach {
         val sign = this
