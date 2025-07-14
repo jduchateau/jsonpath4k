@@ -259,24 +259,55 @@ fun Project.setupDokka(
 }
 
 
+/**
+ * Makes all publishing tasks depend on all signing tasks. Hampers parallelization but works around dodgy task dependencies
+ * that (more often than anticipated) make the build process stumble over its own feet.
+ */
+internal fun setupSignDependency() {
+    logger.lifecycle("")
+    logger.lifecycle("  Making signing tasks run after publish tasks")
+    logger.info("")
+
+    tasks.withType<Sign>().configureEach {
+        val sign = this
+        tasks.withType<AbstractPublishToMaven>().forEach {
+            it.dependsOn(sign)
+            it.mustRunAfter(sign)
+        }
+    }
+
+    tasks.findByName("androidReleaseSourcesJar")?.apply {
+        tasks.findByName("generateKotlinGrammarSource")?.let {
+            dependsOn(it)
+            mustRunAfter(it)
+        }
+    }
+
+    gradle.taskGraph.whenReady {
+        logger.info("")
+        logger.info("  Task Graph for project $name is ready. The following publish tasks are present:")
+        tasks.withType<AbstractPublishToMaven>().forEach {
+            logger.info("    * ${it.name}")
+        }
+        logger.info("\n  The following signing tasks are present:")
+        tasks.withType<Sign>().forEach {
+            logger.info("    * ${it.name}")
+        }
+        tasks.withType<AbstractPublishToMaven>().forEach { publishTask ->
+            val signingTasks = publishTask.dependsOn.filterIsInstance<Sign>()
+            logger.info("   * ${publishTask.name} must now run after")
+            signingTasks.forEach {
+                logger.info("      * ${it.name}")
+            }
+        }
+        logger.info("")
+    }
+}
+
+
 afterEvaluate {
     tasks.withType<Test> {
         useJUnitPlatform()
     }
-
-    /**
-     * Makes all publishing tasks depend on all signing tasks. Hampers parallelization, but works around dodgy task dependencies
-     * which (more often than anticipated) makes the build process stumble over its own feet.
-     */
-
-    tasks.withType<Sign>().also { signingTasks ->
-        if (signingTasks.isNotEmpty()) {
-            logger.lifecycle("> Making signing tasks of project \u001B[1m$name\u001B[0m run after publish tasks")
-            tasks.withType<AbstractPublishToMaven>().configureEach {
-                mustRunAfter(*signingTasks.toTypedArray())
-                logger.lifecycle("  * $name must now run after ${signingTasks.joinToString { it.name }}")
-            }
-            logger.lifecycle("")
-        }
-    }
+    setupSignDependency()
 }
