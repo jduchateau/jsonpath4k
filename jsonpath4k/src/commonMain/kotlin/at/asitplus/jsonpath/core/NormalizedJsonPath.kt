@@ -39,7 +39,6 @@ class NormalizedJsonPath(
         }}"
     }
 
-    @Throws(Throwable::class)
     fun toShorthandNameSegmentNotationWherePossible(): String {
         return "$${segments.joinToString("") {
             when(it) {
