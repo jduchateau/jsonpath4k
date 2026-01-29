@@ -1,3 +1,6 @@
+# Release 3.0.1
+ * Fix: Validates whether the whole string has been consumed
+
 # Release 3.0.0
  * BREAKING CHANGES:
    * Removed template type from `JsonPathFunctionExtension`
