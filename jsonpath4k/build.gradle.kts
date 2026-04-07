@@ -80,6 +80,9 @@ kotlin {
     iosSimulatorArm64()
     iosX64()
 
+    js {
+        browser()
+    }
 
     sourceSets {
         commonMain {
